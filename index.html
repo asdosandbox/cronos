@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,700;0,900;1,400&family=Barlow+Condensed:wght@900&family=Oswald:wght@700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --red: #c03;
+  --red: #1c1c1c;
   --dark: #1c1c1c;
   --mid: #555;
   --light: #888;
@@ -27,6 +27,7 @@
   --font: 'Barlow', sans-serif;
 }
 body.dark {
+  --red: #f0f0f0;
   --dark: #f0f0f0;
   --mid: #aaa;
   --light: #666;
@@ -47,9 +48,10 @@ header {
   transition: background 0.25s, border-color 0.25s;
 }
 .logo {
-  background: var(--red); color: #fff; font-weight: 900; font-size: 15px;
-  letter-spacing: 0.04em; padding: 6px 12px; border-radius: 3px;
-  text-decoration: none; user-select: none;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700; font-size: 1.1rem;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--dark); text-decoration: none; user-select: none;
 }
 .header-icons { display: flex; gap: 18px; }
 .header-icons button {
@@ -63,7 +65,7 @@ header {
 main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; flex-direction: column; }
 
 /* subtitle */
-.subtitle { font-size: 1.2rem; font-weight: 400; color: var(--dark); margin-bottom: 6px; align-self: flex-start; }
+.subtitle { font-size: 1.2rem; font-weight: 400; color: var(--dark); margin-bottom: 6px; align-self: center; text-align: center; }
 .subtitle strong { font-weight: 900; }
 
 /* CLOCK */
@@ -72,12 +74,13 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
   position: relative; display: block; width: 100%;
 }
 .clock-utc-bg {
-  position: absolute;
-  right: 0; bottom: 0.1em;
+  display: block;
+  text-align: center;
+  margin-top: 0.3em;
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;
   font-size: clamp(2rem, 4.4vw, 3.2rem);
-  color: var(--light);
+  color: var(--border);
   white-space: nowrap;
   pointer-events: none;
   user-select: none;
@@ -110,7 +113,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
 }
 
 /* DATE */
-.date-block { margin: 8px 0 4px; align-self: flex-end; text-align: right; }
+.date-block { margin: 8px 0 4px; align-self: center; text-align: center; }
 .date-main { font-size: 1.45rem; font-weight: 500; color: var(--dark); }
 .date-event { font-size: 0.82rem; color: var(--mid); margin-top: 1px; }
 
@@ -118,7 +121,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
 .cities-row {
   display: flex; align-items: stretch; flex-wrap: nowrap;
   gap: 6px; margin: 18px 0 0; overflow-x: auto;
-  padding-bottom: 4px; justify-content: flex-end;
+  padding-bottom: 4px; justify-content: center;
 }
 .cities-row::-webkit-scrollbar { height: 4px; }
 .cities-row::-webkit-scrollbar-track { background: transparent; }
@@ -228,7 +231,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
 }
 
 /* ── COUNTDOWNS ── */
-.cd-section { max-width: 1100px; margin: 0 auto; padding: 36px 28px 8px; }
+.cd-section { max-width: 980px; margin: 0 auto; padding: 36px 28px 8px; text-align: center; }
+.cd-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.cd-header-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--light); }
+.cd-card-name { font-size: 0.9rem; font-weight: 700; color: var(--dark); line-height: 1.3; text-align: center; flex: 1; padding-right: 0; }
+.cd-card-target { font-size: 0.72rem; color: var(--light); margin-top: 2px; text-align: center; }
 .cd-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .cd-header-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--light); }
 .cd-add-btn {
@@ -242,22 +249,25 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
 
 .cd-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 14px;
 }
-
 .cd-card {
-  border: 1px solid var(--border); border-radius: 8px;
-  padding: 18px 20px 16px; background: var(--chip-bg);
-  position: relative; transition: border-color 0.15s, background 0.25s;
+  border: 1px solid var(--border); border-radius: 16px;
+  padding: 22px 24px 18px; background: var(--chip-bg);
+  position: relative; transition: all 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  width: 100%;
+  box-sizing: border-box;
 }
-.cd-card:hover { border-color: var(--mid); }
+.cd-card:hover { border-color: var(--mid); box-shadow: 0 4px 20px rgba(0,0,0,0.10); transform: translateY(-1px); }
 .cd-card.past  { border-color: var(--border); background: var(--bg-gray); }
 .cd-card.future { border-color: var(--border); background: var(--chip-bg); }
 
-.cd-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
-.cd-card-name { font-size: 0.9rem; font-weight: 700; color: var(--dark); line-height: 1.3; padding-right: 8px; }
-.cd-card-target { font-size: 0.72rem; color: var(--light); margin-top: 2px; }
+.cd-card-top { position: relative; text-align: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.cd-card-name { font-size: 0.95rem; font-weight: 700; color: var(--dark); line-height: 1.3; display: block; }
+.cd-card-target { font-size: 0.7rem; color: var(--light); margin-top: 3px; display: block; }
+.cd-card-actions { position: absolute; top: 0; right: 0; display: flex; gap: 4px; }
 
 .cd-card-actions { display: flex; gap: 4px; flex-shrink: 0; }
 .cd-card-actions button {
@@ -269,24 +279,25 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
 .cd-card-actions button.del:hover { color: var(--red); }
 
 .cd-digits {
-  display: flex; align-items: baseline; gap: 1px;
-  margin-bottom: 14px; flex-wrap: wrap; row-gap: 6px;
+  display: flex; align-items: baseline; gap: 0;
+  margin-bottom: 14px; flex-wrap: nowrap;
 }
-.cd-unit { text-align: center; }
+.cd-unit { text-align: center; flex: 1; min-width: 0; }
 .cd-num {
   font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900; font-size: clamp(1.5rem, 5vw, 2.4rem);
+  font-weight: 900; font-size: clamp(1.1rem, 3.5vw, 1.8rem);
   color: var(--dark); line-height: 1;
   display: block;
 }
 .cd-card.past .cd-num  { color: var(--mid); }
 .cd-card.future .cd-num { color: var(--dark); }
-.cd-lbl { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em;
+.cd-lbl { font-size: 0.52rem; font-weight: 700; letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--light); display: block; margin-top: 1px; }
 .cd-sep {
   font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900; font-size: clamp(1.3rem, 4vw, 2rem);
-  color: var(--border); line-height: 1; align-self: flex-start; padding: 0 1px; margin-top: 3px;
+  font-weight: 900; font-size: clamp(1rem, 3vw, 1.5rem);
+  color: var(--border); line-height: 1; align-self: flex-start; padding: 0; margin-top: 2px;
+  flex-shrink: 0;
 }
 
 .cd-bar-wrap { background: var(--border); border-radius: 99px; height: 4px; overflow: hidden; }
@@ -404,7 +415,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
   flex-direction: column;
   align-items: center;
 }
-#fs-subtitle, #fs-subtitle2 {
+.fs-dim { font-weight: 400; color: #888; }
+#fs-overlay.night .fs-dim { color: var(--nr, #c00); }
   font-weight: 400; color: #888;
   margin-bottom: 0.08em;
   text-align: center;
@@ -444,8 +456,31 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
   text-align: center;
 }
 .hidden { display: none !important; }
-#fs-city2-btn {
-  position: fixed; top: 20px; left: 24px;
+#fs-night-btn {
+  position: fixed; top: 20px; left: 64px;
+  background: none; border: 1px solid #333; border-radius: 50%;
+  width: 32px; height: 32px; cursor: pointer;
+  color: #555; display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+#fs-night-btn:hover { color: #900; border-color: #900; }
+#fs-overlay.night { background: #000; }
+#fs-overlay.night #fs-clock             { color: var(--nr,  #c00); }
+#fs-overlay.night #fs-subtitle          { color: var(--nr,  #c00); }
+#fs-overlay.night #fs-subtitle strong   { color: var(--nr,  #c00); }
+#fs-overlay.night #fs-gmt               { color: var(--nr,  #c00); }
+#fs-overlay.night #fs-date              { color: var(--nr,  #c00); }
+#fs-overlay.night #fs-info              { color: var(--nr,  #c00); }
+#fs-overlay.night #fs-clock2            { color: var(--nr2, #600); }
+#fs-overlay.night #fs-subtitle2         { color: var(--nr2, #600); }
+#fs-overlay.night #fs-subtitle2 strong  { color: var(--nr2, #600); }
+#fs-overlay.night #fs-gmt2              { color: var(--nr2, #600); }
+#fs-overlay.night #fs-date2             { color: var(--nr2, #600); }
+#fs-overlay.night #fs-info2             { color: var(--nr2, #600); }
+#fs-overlay.night #fs-divider           { color: var(--nd,  #300); }
+#fs-overlay.night #fs-close,
+#fs-overlay.night #fs-city2-btn         { color: var(--nd,  #300); border-color: var(--nd, #300); }
+#fs-overlay.night #fs-night-btn         { color: var(--nr,  #c00); border-color: var(--nr, #c00); }
   background: none; border: 1px solid #333; border-radius: 50%;
   width: 32px; height: 32px; cursor: pointer;
   color: #555; font-size: 1.1rem; line-height: 1;
@@ -487,7 +522,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
 
 <!-- HEADER -->
 <header>
-  <div></div>
+  <a class="logo" href="#">CRONOS</a>
   <div class="header-icons">
     <button id="theme-btn" title="Modo oscuro / claro">
       <svg id="theme-icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -515,14 +550,13 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
   <p class="subtitle">Zona horaria <strong id="tz-name">—</strong> <span style="font-weight:400;color:var(--light)">(Actual)</span> / <span id="main-gmt" style="font-weight:400;color:var(--light)"></span></p>
 
   <div class="clock-wrap">
-    <div class="clock-utc-bg" id="clock-utc-bg">UTC −5</div>
     <span id="main-clock"><span class="d" id="mc-h0">0</span><span class="d" id="mc-h1">0</span><span class="sep">:</span><span class="d" id="mc-m0">0</span><span class="d" id="mc-m1">0</span><span class="sep">:</span><span class="d" id="mc-s0">0</span><span class="d" id="mc-s1">0</span></span>
   </div>
 
   <div class="date-block">
     <div class="date-main" id="date-main">—</div>
     <div class="date-event" id="date-event"></div>
-    <div id="main-temp" style="font-size:0.85rem;color:var(--light);margin-top:3px;"></div>
+    <div id="main-temp" style="font-size:1.45rem;font-weight:500;color:var(--light);margin-top:3px;"></div>
   </div>
 
   <div class="cities-row" id="cities-row" style="scroll-margin-top:60px">
@@ -547,7 +581,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
   <div id="fs-inner">
     <div id="fs-row-clocks">
       <div class="fs-col">
-        <p id="fs-subtitle">Zona horaria <strong id="fs-city">—</strong> <span style="color:#555;font-weight:400">(Actual)</span> / <span id="fs-gmt" style="color:#555;font-weight:400"></span></p>
+        <p id="fs-subtitle">Zona horaria <strong id="fs-city">—</strong> <span class="fs-dim">(Actual)</span> / <span id="fs-gmt" class="fs-dim"></span></p>
         <span id="fs-clock"><span class="fc-pair"><span class="d" id="fc-h0">0</span><span class="d" id="fc-h1">0</span></span><span class="sep">:</span><span class="fc-pair"><span class="d" id="fc-m0">0</span><span class="d" id="fc-m1">0</span></span><span class="sep">:</span><span class="fc-pair"><span class="d" id="fc-s0">0</span><span class="d" id="fc-s1">0</span></span></span>
         <p id="fs-date">—</p>
         <p id="fs-info">—</p>
@@ -560,6 +594,15 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
         <p id="fs-info2">—</p>
       </div>
     </div>
+  </div>
+  <button id="fs-night-btn" title="Modo nocturno">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+  <div id="fs-night-slider" style="display:none;position:fixed;top:14px;left:104px;display:none;align-items:center;gap:8px;">
+    <span style="font-size:10px;color:#500;">-</span>
+    <input type="range" id="fs-night-range" min="20" max="100" value="75" step="5"
+      style="width:80px;accent-color:#c00;cursor:pointer;">
+    <span style="font-size:10px;color:#500;">+</span>
   </div>
   <button id="fs-city2-btn" title="Agregar segunda ciudad">+</button>
   <button id="fs-close" title="Salir de pantalla completa">
@@ -862,7 +905,7 @@ async function applyGpsCoords(lat, lon) {
     if (city) {
       detectedCityName = city;
       document.getElementById('tz-name').textContent = city;
-      document.title = `TIME.IS — ${city}`;
+      document.title = `Cronos — ${city}`;
       const fsCity = document.getElementById('fs-city');
       if (fsCity) fsCity.textContent = city;
       localStorage.setItem('timeis_city_name', city);
@@ -883,7 +926,7 @@ async function geolocateCity() {
       if (city) {
         detectedCityName = city;
         document.getElementById('tz-name').textContent = city;
-        document.title = `TIME.IS — ${city}`;
+        document.title = `Cronos — ${city}`;
         const fsCity = document.getElementById('fs-city');
         if (fsCity) fsCity.textContent = city;
       }
@@ -1493,6 +1536,33 @@ async function updateChipTemps() {
   }));
 }
 
+// ── MODO NOCTURNO FULLSCREEN ─────────────────────────────────
+let fsNightMode = false;
+const fsNightSlider = document.getElementById('fs-night-slider');
+const fsNightRange  = document.getElementById('fs-night-range');
+
+function applyNightIntensity(val) {
+  const v = parseInt(val);
+  // Escalar: val 20-100 → intensidad del rojo
+  const r = Math.round(v * 2.0);        // 40–200
+  const dim = Math.round(v * 0.45);     // 9–45  (textos secundarios)
+  fsOverlay.style.setProperty('--nr',  `rgb(${r},0,0)`);
+  fsOverlay.style.setProperty('--nr2', `rgb(${Math.round(r*0.5)},0,0)`);
+  fsOverlay.style.setProperty('--nd',  `rgb(${dim},0,0)`);
+}
+
+document.getElementById('fs-night-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  fsNightMode = !fsNightMode;
+  fsOverlay.classList.toggle('night', fsNightMode);
+  fsNightSlider.style.display = fsNightMode ? 'flex' : 'none';
+  if (fsNightMode) applyNightIntensity(fsNightRange.value);
+});
+
+fsNightRange.addEventListener('input', (e) => {
+  applyNightIntensity(e.target.value);
+});
+
 // ── SEGUNDA CIUDAD FULLSCREEN ─────────────────────────────────
 let fsCity2Tz = localStorage.getItem('timeis_fs_city2') || null;
 
@@ -1730,7 +1800,7 @@ function initTzLabels() {
   const offStr = off === 0 ? '+0' : (off > 0 ? `+${off}` : `${off}`);
   const tzId = USER_TZ.split('/').pop().replace(/_/g,' ');
 
-  document.title = `TIME.IS — ${cityName}`;
+  document.title = `Cronos — ${cityName}`;
   document.getElementById('tz-name').textContent = cityName;
   const gmtEl = document.getElementById('main-gmt');
   if (gmtEl) gmtEl.textContent = '/ ' + (offStr === '+0' ? 'UTC +0' : `UTC ${offStr}`);
