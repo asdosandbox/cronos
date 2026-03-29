@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronos — Reloj mundial en tiempo real</title>
+<meta name="description" content="Reloj mundial en tiempo real. Detecta tu ciudad, temperatura y zona horaria automáticamente.">
+<meta property="og:title" content="Cronos — Reloj mundial en tiempo real">
+<meta property="og:description" content="Hora local · GMT · Temperatura · 165+ ciudades · Fullscreen · Modo oscuro · Cuentas regresivas">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://asdosandbox.github.io/cronos">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cronos — Reloj mundial en tiempo real">
+<meta name="twitter:description" content="Hora local · GMT · Temperatura · 165+ ciudades · Fullscreen">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,700;0,900;1,400&family=Barlow+Condensed:wght@900&family=Oswald:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #c03;
+  --dark: #1c1c1c;
+  --mid: #555;
+  --light: #888;
+  --border: #d8d8d8;
+  --bg-gray: #efefef;
+  --bg-white: #fff;
+  --chip-bg: #fff;
+  --utc-wm: #e4e4e4;
+  --font: 'Barlow', sans-serif;
+}
+body.dark {
+  --dark: #f0f0f0;
+  --mid: #aaa;
+  --light: #666;
+  --border: #333;
+  --bg-gray: #1a1a1a;
+  --bg-white: #111;
+  --chip-bg: #1a1a1a;
+  --utc-wm: #222;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg-white); color: var(--dark); min-height: 100vh; transition: background 0.25s, color 0.25s; }
+
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 52px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg-white); z-index: 100;
+  transition: background 0.25s, border-color 0.25s;
+}
+.logo {
+  background: var(--red); color: #fff; font-weight: 900; font-size: 15px;
+  letter-spacing: 0.04em; padding: 6px 12px; border-radius: 3px;
+  text-decoration: none; user-select: none;
+}
+.header-icons { display: flex; gap: 18px; }
+.header-icons button {
+  background: none; border: none; cursor: pointer; padding: 4px;
+  color: var(--light); display: flex; align-items: center;
+}
+.header-icons button:hover { color: var(--dark); }
+.header-icons svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── MAIN ── */
+main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; flex-direction: column; }
+
+/* subtitle */
+.subtitle { font-size: 1.2rem; font-weight: 400; color: var(--dark); margin-bottom: 6px; align-self: flex-start; }
+.subtitle strong { font-weight: 900; }
+
+/* CLOCK */
+.clock-wrap {
+  text-align: center; margin: 4px 0 0; line-height: 1;
+  position: relative; display: block; width: 100%;
+}
+.clock-utc-bg {
+  position: absolute;
+  right: 0; bottom: 0.1em;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2rem, 4.4vw, 3.2rem);
+  color: var(--light);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+#main-clock { position: relative; z-index: 1; }
+#main-clock {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: clamp(4rem, 17vw, 11rem);
+  color: var(--dark);
+  letter-spacing: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+#main-clock .d {
+  display: inline-block;
+  width: 0.6em;
+  text-align: center;
+  flex-shrink: 0;
+}
+#main-clock .sep {
+  display: inline-block;
+  width: 0.22em;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* DATE */
+.date-block { margin: 8px 0 4px; align-self: flex-end; text-align: right; }
+.date-main { font-size: 1.45rem; font-weight: 500; color: var(--dark); }
+.date-event { font-size: 0.82rem; color: var(--mid); margin-top: 1px; }
+
+/* CITY CHIPS ROW */
+.cities-row {
+  display: flex; align-items: stretch; flex-wrap: nowrap;
+  gap: 6px; margin: 18px 0 0; overflow-x: auto;
+  padding-bottom: 4px; justify-content: flex-end;
+}
+.cities-row::-webkit-scrollbar { height: 4px; }
+.cities-row::-webkit-scrollbar-track { background: transparent; }
+.cities-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.city-chip {
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 8px 14px; min-width: 90px; text-align: center;
+  cursor: default; position: relative; flex-shrink: 0;
+  background: var(--chip-bg); transition: border-color 0.15s;
+}
+.city-chip:hover { border-color: var(--mid); }
+.city-chip .c-name { font-size: 0.78rem; font-weight: 700; color: var(--dark); line-height: 1.2; }
+.city-chip .c-time { font-size: 1rem; font-weight: 500; color: var(--dark); margin-top: 3px; }
+.city-chip .c-temp { font-size: 0.68rem; color: var(--light); margin-top: 1px; min-height: 0.9em; }
+.city-chip .c-remove {
+  position: absolute; top: 3px; right: 5px; display: none;
+  background: none; border: none; cursor: pointer; color: var(--border);
+  font-size: 14px; line-height: 1; padding: 0;
+}
+.city-chip:hover .c-remove { display: block; }
+.city-chip .c-remove:hover { color: var(--red); }
+.city-chip.detected { border-color: var(--mid); background: var(--bg-gray); }
+.city-chip.detected .c-name::after {
+  content: ' ✦'; font-size: 8px; color: var(--red); vertical-align: super;
+}
+
+.add-chip {
+  border: 1px dashed var(--border); border-radius: 4px;
+  padding: 8px 14px; min-width: 54px; text-align: center;
+  cursor: pointer; flex-shrink: 0; color: var(--light);
+  font-size: 1.4rem; font-weight: 300; display: flex;
+  align-items: center; justify-content: center;
+  transition: all 0.15s; background: transparent;
+  line-height: 1;
+}
+.add-chip:hover { border-color: var(--red); color: var(--red); background: var(--bg-gray); }
+
+/* ── GRAY SECTION ── */
+.zone-section {
+  background: var(--bg-gray); margin: 32px -28px 0;
+  padding: 32px 28px 40px; position: relative; overflow: hidden;
+}
+.zone-section-inner { max-width: 1100px; margin: 0 auto; }
+.zone-label { font-size: 1.35rem; font-weight: 400; color: var(--dark); margin-bottom: 6px; }
+.zone-label strong { font-weight: 900; }
+.utc-watermark {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: clamp(4rem, 16vw, 10rem);
+  color: var(--border); margin-top: 8px; line-height: 1; user-select: none;
+}
+
+/* DIFF TABLE */
+.diff-section { max-width: 1100px; margin: 0 auto; padding: 32px 28px 48px; }
+.diff-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--light); margin-bottom: 12px; }
+.diff-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.diff-table tr { border-bottom: 1px solid var(--border); }
+.diff-table tr:hover td { background: var(--bg-gray); }
+.diff-table td { padding: 8px 6px; }
+.diff-table td:first-child { font-weight: 500; color: var(--dark); width: 45%; }
+.diff-table td:nth-child(2) { color: var(--mid); font-size: 0.85rem; }
+.diff-table td:last-child { text-align: right; font-size: 0.85rem; color: var(--light); font-weight: 500; }
+.diff-table .zero td { background: var(--bg-gray); }
+.diff-table .zero td:first-child { color: var(--red); font-weight: 700; }
+
+/* ── MODAL ADD CITY ── */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 500;
+  align-items: flex-start; justify-content: center;
+  padding-top: 80px;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--bg-white); border-radius: 8px; padding: 24px;
+  width: 100%; max-width: 440px; box-shadow: 0 8px 40px rgba(0,0,0,0.28);
+  border: 1px solid var(--border);
+}
+.modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; color: var(--dark); }
+.modal input {
+  width: 100%; border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 12px; font-size: 0.95rem; font-family: var(--font);
+  margin-bottom: 10px; outline: none;
+  background: var(--bg-white); color: var(--dark);
+}
+.modal input:focus { border-color: var(--red); }
+.city-list-scroll { max-height: 320px; overflow-y: auto; }
+.city-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 10px; border-radius: 4px; cursor: pointer;
+  font-size: 0.9rem;
+}
+.city-option:hover { background: var(--bg-gray); }
+.city-option .co-name { font-weight: 600; color: var(--dark); }
+.city-option .co-tz { font-size: 0.78rem; color: var(--light); }
+.city-option .co-time { font-size: 0.85rem; color: var(--mid); font-weight: 500; min-width: 46px; text-align: right; }
+.city-option .co-add { font-size: 1.2rem; color: var(--border); margin-left: 8px; }
+.city-option:hover .co-add { color: var(--red); }
+.modal-close { float: right; background: none; border: none; cursor: pointer; font-size: 1.3rem; color: var(--light); margin-top: -4px; }
+.modal-close:hover { color: var(--dark); }
+
+@media (max-width: 600px) {
+  header { padding: 0 16px; }
+  main { padding: 24px 16px 0; }
+  .diff-section { padding: 24px 16px 32px; }
+  .cities-row { justify-content: flex-start; }
+}
+
+/* ── COUNTDOWNS ── */
+.cd-section { max-width: 1100px; margin: 0 auto; padding: 36px 28px 8px; }
+.cd-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.cd-header-title { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--light); }
+.cd-add-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 6px 14px; font-size: 0.8rem; font-family: var(--font);
+  font-weight: 700; color: var(--mid); cursor: pointer; transition: all 0.15s;
+}
+.cd-add-btn:hover { border-color: var(--red); color: var(--red); }
+.cd-add-btn span { font-size: 1.1rem; line-height: 1; }
+
+.cd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.cd-card {
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 18px 20px 16px; background: var(--chip-bg);
+  position: relative; transition: border-color 0.15s, background 0.25s;
+}
+.cd-card:hover { border-color: var(--mid); }
+.cd-card.past  { border-color: var(--border); background: var(--bg-gray); }
+.cd-card.future { border-color: var(--border); background: var(--chip-bg); }
+
+.cd-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.cd-card-name { font-size: 0.9rem; font-weight: 700; color: var(--dark); line-height: 1.3; padding-right: 8px; }
+.cd-card-target { font-size: 0.72rem; color: var(--light); margin-top: 2px; }
+
+.cd-card-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.cd-card-actions button {
+  background: none; border: none; cursor: pointer;
+  color: var(--border); font-size: 14px; padding: 2px 4px; line-height: 1;
+  border-radius: 3px; transition: color 0.12s;
+}
+.cd-card-actions button:hover { color: var(--dark); }
+.cd-card-actions button.del:hover { color: var(--red); }
+
+.cd-digits {
+  display: flex; align-items: baseline; gap: 1px;
+  margin-bottom: 14px; flex-wrap: wrap; row-gap: 6px;
+}
+.cd-unit { text-align: center; }
+.cd-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: clamp(1.5rem, 5vw, 2.4rem);
+  color: var(--dark); line-height: 1;
+  display: block;
+}
+.cd-card.past .cd-num  { color: var(--mid); }
+.cd-card.future .cd-num { color: var(--dark); }
+.cd-lbl { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--light); display: block; margin-top: 1px; }
+.cd-sep {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: clamp(1.3rem, 4vw, 2rem);
+  color: var(--border); line-height: 1; align-self: flex-start; padding: 0 1px; margin-top: 3px;
+}
+
+.cd-bar-wrap { background: var(--border); border-radius: 99px; height: 4px; overflow: hidden; }
+.cd-bar { height: 100%; border-radius: 99px; background: var(--dark); transition: width 1s linear; }
+.cd-card.past .cd-bar { background: var(--light); }
+.cd-bar-meta { display: flex; justify-content: space-between; margin-top: 5px; }
+.cd-bar-pct { font-size: 0.7rem; color: var(--light); }
+
+/* modal countdown */
+.cd-modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 600;
+  align-items: flex-start; justify-content: center; padding-top: 100px;
+}
+.cd-modal-bg.open { display: flex; }
+.cd-modal {
+  background: var(--bg-white); border-radius: 8px; padding: 24px 28px;
+  width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(0,0,0,0.28);
+  border: 1px solid var(--border);
+}
+.cd-modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; color: var(--dark); }
+.cd-modal label { display: block; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--light); margin-bottom: 5px; }
+.cd-modal input, .cd-modal select {
+  width: 100%; border: 1px solid var(--border); border-radius: 4px;
+  padding: 9px 12px; font-size: 0.92rem; font-family: var(--font);
+  margin-bottom: 14px; outline: none; color: var(--dark); background: var(--bg-white);
+}
+.cd-modal input:focus, .cd-modal select:focus { border-color: var(--red); }
+.cd-modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.cd-modal-footer button {
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 8px 18px; font-size: 0.85rem; font-family: var(--font);
+  font-weight: 700; cursor: pointer; background: var(--bg-white); color: var(--mid);
+  transition: all 0.12s;
+}
+.cd-modal-footer .btn-save {
+  background: var(--dark); color: var(--bg-white); border-color: var(--dark);
+}
+.cd-modal-footer .btn-save:hover { background: var(--mid); }
+.cd-modal-footer button:not(.btn-save):hover { border-color: var(--light); color: var(--dark); }
+
+@media (max-width: 600px) {
+  .cd-section { padding: 28px 16px 8px; }
+  .cd-grid { grid-template-columns: 1fr; }
+}
+/* ── MENÚ DROPDOWN ── */
+.menu-wrap { position: relative; }
+.menu-dropdown {
+  display: none; position: absolute; top: calc(100% + 8px); right: 0;
+  background: var(--bg-white); border: 1px solid var(--border);
+  border-radius: 8px; min-width: 260px; z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden;
+  max-height: 80vh; overflow-y: auto;
+}
+.menu-dropdown.open { display: block; }
+.menu-item {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 11px 16px; font-size: 0.88rem;
+  font-weight: 500; color: var(--dark); text-decoration: none;
+  transition: background 0.12s; border-bottom: 1px solid var(--border);
+  background: none; border-left: none; border-right: none; border-top: none;
+  cursor: pointer; font-family: var(--font); text-align: left;
+  box-sizing: border-box;
+}
+.menu-item:last-child { border-bottom: none; }
+.menu-item:hover { background: var(--bg-gray); }
+.diff-btn-header {
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--light);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 2px;
+  letter-spacing: 0.02em;
+  transition: color 0.15s;
+}
+.diff-btn-header:hover { color: var(--dark); }
+.menu-acc-body .diff-table { width: 100%; font-size: 0.8rem; border-collapse: collapse; }
+.menu-acc-body .diff-table tr { border-bottom: 1px solid var(--border); }
+.menu-acc-body .diff-table tr:last-child { border-bottom: none; }
+.menu-acc-body .diff-table td { padding: 7px 16px; color: var(--mid); }
+.menu-acc-body .diff-table td:first-child { font-weight: 600; color: var(--dark); }
+.menu-acc-body .diff-table td:last-child { text-align: right; color: var(--light); font-size: 0.75rem; }
+.menu-acc-body .diff-table .zero td:first-child { color: var(--red); }
+.menu-acc-body .diff-table tr:hover td { background: var(--bg-gray); }
+/* ── FULLSCREEN CLOCK ── */
+#fs-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 1000;
+  background: #000; overflow: hidden;
+}
+#fs-overlay.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#fs-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  white-space: nowrap;
+}
+#fs-row-clocks {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  line-height: 1;
+  gap: 0;
+}
+.fs-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#fs-subtitle, #fs-subtitle2 {
+  font-weight: 400; color: #888;
+  margin-bottom: 0.08em;
+  text-align: center;
+  white-space: nowrap;
+}
+#fs-subtitle strong, #fs-subtitle2 strong { font-weight: 900; color: #ccc; }
+#fs-subtitle2, #fs-subtitle2 strong { color: #444; }
+#fs-subtitle2 strong { color: #555; }
+#fs-divider {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  color: #2a2a2a;
+  flex-shrink: 0;
+  display: inline-block;
+  text-align: center;
+}
+#fs-clock, #fs-clock2 {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+#fs-clock  { color: #ccc; }
+#fs-clock2 { color: #3a3a3a; }
+#fs-clock .d, #fs-clock2 .d {
+  display: inline-block;
+  width: 0.6em;
+  text-align: center;
+}
+#fs-clock .sep, #fs-clock2 .sep {
+  display: inline-block;
+  width: 0.22em;
+  text-align: center;
+}
+.hidden { display: none !important; }
+#fs-city2-btn {
+  position: fixed; top: 20px; left: 24px;
+  background: none; border: 1px solid #333; border-radius: 50%;
+  width: 32px; height: 32px; cursor: pointer;
+  color: #555; font-size: 1.1rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+#fs-city2-btn:hover { color: #999; border-color: #666; }
+#fs-date, #fs-date2 {
+  font-weight: 400;
+  color: #555;
+  text-align: center;
+  white-space: nowrap;
+  margin-top: 0.08em;
+}
+#fs-info, #fs-info2 {
+  font-weight: 500;
+  color: #3a3a3a;
+  text-align: center;
+  white-space: nowrap;
+  margin-top: 0.05em;
+  letter-spacing: 0.04em;
+}
+#fs-close {
+  position: fixed; top: 20px; right: 24px;
+  background: none; border: none; cursor: pointer;
+  color: #444; padding: 8px; transition: color 0.15s; z-index: 1001;
+}
+#fs-close:hover { color: #fff; }
+/* ── DRAG & DROP ── */
+.city-chip { cursor: grab; }
+.city-chip.dragging { opacity: 0.35; cursor: grabbing; }
+.city-chip.drag-over { border-color: var(--red); }
+.cd-card { cursor: grab; }
+.cd-card.dragging { opacity: 0.35; cursor: grabbing; }
+.cd-card.drag-over { border-color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div></div>
+  <div class="header-icons">
+    <button id="theme-btn" title="Modo oscuro / claro">
+      <svg id="theme-icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="theme-icon-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <button id="fs-btn" title="Pantalla completa">
+      <svg id="fs-icon-enter" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      <svg id="fs-icon-exit" viewBox="0 0 24 24" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+    </button>
+    <div class="menu-wrap" id="menu-wrap">
+      <button id="menu-btn" title="Diferencias horarias">
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <div class="menu-dropdown" id="menu-dropdown">
+        <div class="menu-acc-body open">
+          <table class="diff-table" id="diff-table"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main id="sec-clock">
+  <p class="subtitle">Zona horaria <strong id="tz-name">—</strong> <span style="font-weight:400;color:var(--light)">(Actual)</span> / <span id="main-gmt" style="font-weight:400;color:var(--light)"></span></p>
+
+  <div class="clock-wrap">
+    <div class="clock-utc-bg" id="clock-utc-bg">UTC −5</div>
+    <span id="main-clock"><span class="d" id="mc-h0">0</span><span class="d" id="mc-h1">0</span><span class="sep">:</span><span class="d" id="mc-m0">0</span><span class="d" id="mc-m1">0</span><span class="sep">:</span><span class="d" id="mc-s0">0</span><span class="d" id="mc-s1">0</span></span>
+  </div>
+
+  <div class="date-block">
+    <div class="date-main" id="date-main">—</div>
+    <div class="date-event" id="date-event"></div>
+    <div id="main-temp" style="font-size:0.85rem;color:var(--light);margin-top:3px;"></div>
+  </div>
+
+  <div class="cities-row" id="cities-row" style="scroll-margin-top:60px">
+    <span id="sec-cities"></span>
+    <button class="add-chip" id="add-btn" title="Agregar ciudad">+</button>
+  </div>
+</main>
+
+<!-- COUNTDOWNS -->
+<div class="cd-section" id="sec-countdowns">
+  <div class="cd-header">
+    <span class="cd-header-title">Cuentas regresivas</span>
+    <button class="cd-add-btn" id="cd-add-btn"><span>+</span> Nueva cuenta regresiva</button>
+  </div>
+  <div class="cd-grid" id="cd-grid">
+    <!-- tarjetas generadas por JS -->
+  </div>
+</div>
+
+<!-- FULLSCREEN CLOCK -->
+<div id="fs-overlay">
+  <div id="fs-inner">
+    <div id="fs-row-clocks">
+      <div class="fs-col">
+        <p id="fs-subtitle">Zona horaria <strong id="fs-city">—</strong> <span style="color:#555;font-weight:400">(Actual)</span> / <span id="fs-gmt" style="color:#555;font-weight:400"></span></p>
+        <span id="fs-clock"><span class="fc-pair"><span class="d" id="fc-h0">0</span><span class="d" id="fc-h1">0</span></span><span class="sep">:</span><span class="fc-pair"><span class="d" id="fc-m0">0</span><span class="d" id="fc-m1">0</span></span><span class="sep">:</span><span class="fc-pair"><span class="d" id="fc-s0">0</span><span class="d" id="fc-s1">0</span></span></span>
+        <p id="fs-date">—</p>
+        <p id="fs-info">—</p>
+      </div>
+      <span id="fs-divider" class="hidden">/</span>
+      <div class="fs-col hidden" id="fs-col2">
+        <p id="fs-subtitle2">Zona horaria <strong id="fs-city2">—</strong> / <span id="fs-gmt2" style="color:#3a3a3a;font-weight:400"></span></p>
+        <span id="fs-clock2"><span class="fc-pair"><span class="d" id="fc2-h0">0</span><span class="d" id="fc2-h1">0</span></span><span class="sep">:</span><span class="fc-pair"><span class="d" id="fc2-m0">0</span><span class="d" id="fc2-m1">0</span></span><span class="sep">:</span><span class="fc-pair"><span class="d" id="fc2-s0">0</span><span class="d" id="fc2-s1">0</span></span></span>
+        <p id="fs-date2">—</p>
+        <p id="fs-info2">—</p>
+      </div>
+    </div>
+  </div>
+  <button id="fs-city2-btn" title="Agregar segunda ciudad">+</button>
+  <button id="fs-close" title="Salir de pantalla completa">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+  </button>
+</div>
+
+<!-- MODAL SEGUNDA CIUDAD FULLSCREEN -->
+<div id="fs-city2-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:22px;width:100%;max-width:380px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <span style="font-size:0.9rem;font-weight:700;color:#ccc;">Segunda ciudad</span>
+      <button id="fs-city2-modal-close" style="background:none;border:none;cursor:pointer;color:#555;font-size:1.2rem;">×</button>
+    </div>
+    <input id="fs-city2-search" type="text" placeholder="Buscar ciudad…" autocomplete="off"
+      style="width:100%;background:#111;border:1px solid #333;border-radius:4px;padding:9px 12px;font-size:0.9rem;color:#ccc;outline:none;margin-bottom:8px;">
+    <div id="fs-city2-list" style="max-height:280px;overflow-y:auto;"></div>
+    <button id="fs-city2-remove" style="width:100%;margin-top:10px;background:none;border:1px solid #333;border-radius:4px;padding:8px;font-size:0.82rem;color:#666;cursor:pointer;font-family:inherit;">Quitar segunda ciudad</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <button class="modal-close" id="modal-close">×</button>
+    <h3>Agregar ciudad</h3>
+    <input type="text" id="city-search" placeholder="Buscar ciudad…" autocomplete="off">
+    <div class="city-list-scroll">
+      <div id="city-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COUNTDOWN -->
+<div class="cd-modal-bg" id="cd-modal-bg">
+  <div class="cd-modal">
+    <button class="modal-close" id="cd-modal-close" style="float:right;background:none;border:none;cursor:pointer;font-size:1.3rem;color:#aaa;">×</button>
+    <h3 id="cd-modal-title">Nueva cuenta regresiva</h3>
+    <label>Nombre del evento</label>
+    <input type="text" id="cd-name" placeholder="Ej: Entrega del proyecto, reunión, viaje…" maxlength="60">
+    <label>Fecha y hora objetivo</label>
+    <input type="datetime-local" id="cd-datetime">
+    <div class="cd-modal-footer">
+      <button id="cd-cancel">Cancelar</button>
+      <button class="btn-save" id="cd-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATOS ──────────────────────────────────────────────────
+// ── NORMALIZAR TEXTO (sin acentos) ──────────────────────────
+function norm(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+}
+
+const ALL_CITIES = [
+  // ── Américas ──
+  { name: 'Anchorage',        tz: 'America/Anchorage' },
+  { name: 'Vancouver',        tz: 'America/Vancouver' },
+  { name: 'Seattle',          tz: 'America/Los_Angeles' },
+  { name: 'San Francisco',    tz: 'America/Los_Angeles' },
+  { name: 'Los Ángeles',      tz: 'America/Los_Angeles' },
+  { name: 'Las Vegas',        tz: 'America/Los_Angeles' },
+  { name: 'Phoenix',          tz: 'America/Phoenix' },
+  { name: 'Denver',           tz: 'America/Denver' },
+  { name: 'Chicago',          tz: 'America/Chicago' },
+  { name: 'Dallas',           tz: 'America/Chicago' },
+  { name: 'Houston',          tz: 'America/Chicago' },
+  { name: 'Minneapolis',      tz: 'America/Chicago' },
+  { name: 'Miami',            tz: 'America/New_York' },
+  { name: 'Atlanta',          tz: 'America/New_York' },
+  { name: 'Washington DC',    tz: 'America/New_York' },
+  { name: 'Nueva York',       tz: 'America/New_York' },
+  { name: 'Boston',           tz: 'America/New_York' },
+  { name: 'Toronto',          tz: 'America/Toronto' },
+  { name: 'Montreal',         tz: 'America/Toronto' },
+  { name: 'Ciudad de México', tz: 'America/Mexico_City' },
+  { name: 'Guadalajara',      tz: 'America/Mexico_City' },
+  { name: 'Monterrey',        tz: 'America/Monterrey' },
+  { name: 'Guatemala',        tz: 'America/Guatemala' },
+  { name: 'San José CR',      tz: 'America/Costa_Rica' },
+  { name: 'Panamá',           tz: 'America/Panama' },
+  { name: 'La Habana',        tz: 'America/Havana' },
+  { name: 'Santo Domingo',    tz: 'America/Santo_Domingo' },
+  { name: 'San Juan PR',      tz: 'America/Puerto_Rico' },
+  { name: 'Caracas',          tz: 'America/Caracas' },
+  { name: 'Bogotá',           tz: 'America/Bogota' },
+  { name: 'Medellín',         tz: 'America/Bogota' },
+  { name: 'Cali',             tz: 'America/Bogota' },
+  { name: 'Barranquilla',     tz: 'America/Bogota' },
+  { name: 'Quito',            tz: 'America/Guayaquil' },
+  { name: 'Guayaquil',        tz: 'America/Guayaquil' },
+  { name: 'Lima',             tz: 'America/Lima' },
+  { name: 'La Paz',           tz: 'America/La_Paz' },
+  { name: 'Asunción',         tz: 'America/Asuncion' },
+  { name: 'Santiago',         tz: 'America/Santiago' },
+  { name: 'Montevideo',       tz: 'America/Montevideo' },
+  { name: 'Buenos Aires',     tz: 'America/Argentina/Buenos_Aires' },
+  { name: 'Córdoba AR',       tz: 'America/Argentina/Cordoba' },
+  { name: 'São Paulo',        tz: 'America/Sao_Paulo' },
+  { name: 'Río de Janeiro',   tz: 'America/Sao_Paulo' },
+  { name: 'Brasilia',         tz: 'America/Sao_Paulo' },
+  { name: 'Manaos',           tz: 'America/Manaus' },
+  { name: 'Fortaleza',        tz: 'America/Fortaleza' },
+  // ── Europa ──
+  { name: 'Reykjavík',        tz: 'Atlantic/Reykjavik' },
+  { name: 'Dublín',           tz: 'Europe/Dublin' },
+  { name: 'Londres',          tz: 'Europe/London' },
+  { name: 'Lisboa',           tz: 'Europe/Lisbon' },
+  { name: 'Oporto',           tz: 'Europe/Lisbon' },
+  { name: 'Madrid',           tz: 'Europe/Madrid' },
+  { name: 'Barcelona',        tz: 'Europe/Madrid' },
+  { name: 'Sevilla',          tz: 'Europe/Madrid' },
+  { name: 'París',            tz: 'Europe/Paris' },
+  { name: 'Lyon',             tz: 'Europe/Paris' },
+  { name: 'Bruselas',         tz: 'Europe/Brussels' },
+  { name: 'Ámsterdam',        tz: 'Europe/Amsterdam' },
+  { name: 'Berlín',           tz: 'Europe/Berlin' },
+  { name: 'Múnich',           tz: 'Europe/Berlin' },
+  { name: 'Hamburgo',         tz: 'Europe/Berlin' },
+  { name: 'Fráncfort',        tz: 'Europe/Berlin' },
+  { name: 'Viena',            tz: 'Europe/Vienna' },
+  { name: 'Praga',            tz: 'Europe/Prague' },
+  { name: 'Varsovia',         tz: 'Europe/Warsaw' },
+  { name: 'Cracovia',         tz: 'Europe/Warsaw' },
+  { name: 'Zürich',           tz: 'Europe/Zurich' },
+  { name: 'Ginebra',          tz: 'Europe/Zurich' },
+  { name: 'Milán',            tz: 'Europe/Rome' },
+  { name: 'Roma',             tz: 'Europe/Rome' },
+  { name: 'Nápoles',          tz: 'Europe/Rome' },
+  { name: 'Estocolmo',        tz: 'Europe/Stockholm' },
+  { name: 'Oslo',             tz: 'Europe/Oslo' },
+  { name: 'Copenhague',       tz: 'Europe/Copenhagen' },
+  { name: 'Helsinki',         tz: 'Europe/Helsinki' },
+  { name: 'Tallin',           tz: 'Europe/Tallinn' },
+  { name: 'Riga',             tz: 'Europe/Riga' },
+  { name: 'Vilna',            tz: 'Europe/Vilnius' },
+  { name: 'Bucarest',         tz: 'Europe/Bucharest' },
+  { name: 'Sofía',            tz: 'Europe/Sofia' },
+  { name: 'Atenas',           tz: 'Europe/Athens' },
+  { name: 'Belgrado',         tz: 'Europe/Belgrade' },
+  { name: 'Zagreb',           tz: 'Europe/Zagreb' },
+  { name: 'Budapest',         tz: 'Europe/Budapest' },
+  { name: 'Kiev',             tz: 'Europe/Kiev' },
+  { name: 'Estambul',         tz: 'Europe/Istanbul' },
+  { name: 'Moscú',            tz: 'Europe/Moscow' },
+  { name: 'San Petersburgo',  tz: 'Europe/Moscow' },
+  { name: 'Minsk',            tz: 'Europe/Minsk' },
+  // ── África ──
+  { name: 'Casablanca',       tz: 'Africa/Casablanca' },
+  { name: 'Túnez',            tz: 'Africa/Tunis' },
+  { name: 'El Cairo',         tz: 'Africa/Cairo' },
+  { name: 'Accra',            tz: 'Africa/Accra' },
+  { name: 'Dakar',            tz: 'Africa/Dakar' },
+  { name: 'Abiyán',           tz: 'Africa/Abidjan' },
+  { name: 'Lagos',            tz: 'Africa/Lagos' },
+  { name: 'Kigali',           tz: 'Africa/Kigali' },
+  { name: 'Nairobi',          tz: 'Africa/Nairobi' },
+  { name: 'Addis Abeba',      tz: 'Africa/Addis_Ababa' },
+  { name: 'Dar es Salaam',    tz: 'Africa/Dar_es_Salaam' },
+  { name: 'Lusaka',           tz: 'Africa/Lusaka' },
+  { name: 'Harare',           tz: 'Africa/Harare' },
+  { name: 'Johannesburgo',    tz: 'Africa/Johannesburg' },
+  { name: 'Ciudad del Cabo',  tz: 'Africa/Johannesburg' },
+  // ── Medio Oriente ──
+  { name: 'Riad',             tz: 'Asia/Riyadh' },
+  { name: 'Yeda',             tz: 'Asia/Riyadh' },
+  { name: 'Tel Aviv',         tz: 'Asia/Jerusalem' },
+  { name: 'Beirut',           tz: 'Asia/Beirut' },
+  { name: 'Amán',             tz: 'Asia/Amman' },
+  { name: 'Bagdad',           tz: 'Asia/Baghdad' },
+  { name: 'Kuwait',           tz: 'Asia/Kuwait' },
+  { name: 'Dubái',            tz: 'Asia/Dubai' },
+  { name: 'Abu Dabi',         tz: 'Asia/Dubai' },
+  { name: 'Doha',             tz: 'Asia/Qatar' },
+  { name: 'Manama',           tz: 'Asia/Bahrain' },
+  { name: 'Mascate',          tz: 'Asia/Muscat' },
+  { name: 'Teherán',          tz: 'Asia/Tehran' },
+  // ── Asia ──
+  { name: 'Bakú',             tz: 'Asia/Baku' },
+  { name: 'Tiflis',           tz: 'Asia/Tbilisi' },
+  { name: 'Yereván',          tz: 'Asia/Yerevan' },
+  { name: 'Taskent',          tz: 'Asia/Tashkent' },
+  { name: 'Almaty',           tz: 'Asia/Almaty' },
+  { name: 'Karachi',          tz: 'Asia/Karachi' },
+  { name: 'Lahore',           tz: 'Asia/Karachi' },
+  { name: 'Nueva Delhi',      tz: 'Asia/Kolkata' },
+  { name: 'Mumbai',           tz: 'Asia/Kolkata' },
+  { name: 'Bangalore',        tz: 'Asia/Kolkata' },
+  { name: 'Kolkata',          tz: 'Asia/Kolkata' },
+  { name: 'Chennai',          tz: 'Asia/Kolkata' },
+  { name: 'Colombo',          tz: 'Asia/Colombo' },
+  { name: 'Dhaka',            tz: 'Asia/Dhaka' },
+  { name: 'Rangún',           tz: 'Asia/Rangoon' },
+  { name: 'Bangkok',          tz: 'Asia/Bangkok' },
+  { name: 'Hanói',            tz: 'Asia/Ho_Chi_Minh' },
+  { name: 'Ho Chi Minh',      tz: 'Asia/Ho_Chi_Minh' },
+  { name: 'Nom Pen',          tz: 'Asia/Phnom_Penh' },
+  { name: 'Vientián',         tz: 'Asia/Vientiane' },
+  { name: 'Yakarta',          tz: 'Asia/Jakarta' },
+  { name: 'Bali',             tz: 'Asia/Makassar' },
+  { name: 'Surabaya',         tz: 'Asia/Jakarta' },
+  { name: 'Singapur',         tz: 'Asia/Singapore' },
+  { name: 'Kuala Lumpur',     tz: 'Asia/Kuala_Lumpur' },
+  { name: 'Manila',           tz: 'Asia/Manila' },
+  { name: 'Hong Kong',        tz: 'Asia/Hong_Kong' },
+  { name: 'Guangzhou',        tz: 'Asia/Shanghai' },
+  { name: 'Shenzhen',         tz: 'Asia/Shanghai' },
+  { name: 'Pekín',            tz: 'Asia/Shanghai' },
+  { name: 'Shanghái',         tz: 'Asia/Shanghai' },
+  { name: 'Chengdu',          tz: 'Asia/Shanghai' },
+  { name: 'Taipéi',           tz: 'Asia/Taipei' },
+  { name: 'Ulán Bator',       tz: 'Asia/Ulaanbaatar' },
+  { name: 'Seúl',             tz: 'Asia/Seoul' },
+  { name: 'Busan',            tz: 'Asia/Seoul' },
+  { name: 'Tokio',            tz: 'Asia/Tokyo' },
+  { name: 'Osaka',            tz: 'Asia/Tokyo' },
+  { name: 'Sapporo',          tz: 'Asia/Tokyo' },
+  // ── Oceanía ──
+  { name: 'Perth',            tz: 'Australia/Perth' },
+  { name: 'Darwin',           tz: 'Australia/Darwin' },
+  { name: 'Brisbane',         tz: 'Australia/Brisbane' },
+  { name: 'Adelaida',         tz: 'Australia/Adelaide' },
+  { name: 'Melbourne',        tz: 'Australia/Melbourne' },
+  { name: 'Sídney',           tz: 'Australia/Sydney' },
+  { name: 'Canberra',         tz: 'Australia/Sydney' },
+  { name: 'Auckland',         tz: 'Pacific/Auckland' },
+  { name: 'Wellington',       tz: 'Pacific/Auckland' },
+  { name: 'Suva',             tz: 'Pacific/Fiji' },
+  { name: 'Honolulu',         tz: 'Pacific/Honolulu' },
+  { name: 'Papeete',          tz: 'Pacific/Tahiti' },
+];
+
+const DIFF_ROWS = [
+  { name: 'Los Ángeles',    tz: 'America/Los_Angeles' },
+  { name: 'Chicago',        tz: 'America/Chicago' },
+  { name: 'Nueva York',     tz: 'America/New_York' },
+  { name: 'Toronto',        tz: 'America/Toronto' },
+  { name: 'Bogotá',         tz: 'America/Bogota' },
+  { name: 'São Paulo',      tz: 'America/Sao_Paulo' },
+  { name: 'Buenos Aires',   tz: 'America/Argentina/Buenos_Aires' },
+  { name: 'Londres (GMT)',   tz: 'Europe/London', zero: true },
+  { name: 'UTC',             tz: 'UTC', zero: true },
+  { name: 'Lagos',           tz: 'Africa/Lagos' },
+  { name: 'París',           tz: 'Europe/Paris' },
+  { name: 'Berlín',          tz: 'Europe/Berlin' },
+  { name: 'El Cairo',        tz: 'Africa/Cairo' },
+  { name: 'Johannesburgo',   tz: 'Africa/Johannesburg' },
+  { name: 'Estambul',        tz: 'Europe/Istanbul' },
+  { name: 'Moscú',           tz: 'Europe/Moscow' },
+  { name: 'Dubái',           tz: 'Asia/Dubai' },
+  { name: 'Mumbai',          tz: 'Asia/Kolkata' },
+  { name: 'Dhaka',           tz: 'Asia/Dhaka' },
+  { name: 'Bangkok',         tz: 'Asia/Bangkok' },
+  { name: 'Singapur',        tz: 'Asia/Singapore' },
+  { name: 'Hong Kong',       tz: 'Asia/Hong_Kong' },
+  { name: 'Shanghái',        tz: 'Asia/Shanghai' },
+  { name: 'Tokio',           tz: 'Asia/Tokyo' },
+  { name: 'Sídney',          tz: 'Australia/Sydney' },
+  { name: 'Auckland',        tz: 'Pacific/Auckland' },
+];
+
+const HOLIDAYS = {
+  '01-01': 'Año Nuevo', '02-14': 'Día de San Valentín',
+  '03-08': 'Día Internacional de la Mujer', '03-20': 'Equinoccio de Primavera',
+  '03-27': 'Día Mundial del Teatro', '04-22': 'Día de la Tierra',
+  '05-01': 'Día Internacional del Trabajo', '06-05': 'Día Mundial del Medio Ambiente',
+  '06-21': 'Solsticio de Verano', '09-21': 'Día Internacional de la Paz',
+  '10-31': 'Halloween', '11-11': 'Día del Armisticio',
+  '12-21': 'Solsticio de Invierno', '12-24': 'Nochebuena', '12-25': 'Navidad', '12-31': 'Nochevieja',
+};
+
+// ── DETECTAR CIUDAD DEL USUARIO ──────────────────────────────
+// Ciudad detectada (se actualiza async)
+let detectedCityName = null;
+
+function detectUserCity() {
+  try {
+    const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const name = detectedCityName || (ALL_CITIES.find(c => c.tz === userTz)?.name)
+                 || userTz.split('/').pop().replace(/_/g,' ');
+    return { name, tz: userTz, detected: true };
+  } catch { return null; }
+}
+
+let userGpsCoords = null;
+
+async function applyGpsCoords(lat, lon) {
+  userGpsCoords = [lon, lat];
+  // Temperatura con coords reales
+  updateMainTemp();
+  // Ciudad real
+  try {
+    const r = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`
+    );
+    const d = await r.json();
+    const city = d.city || d.locality || d.principalSubdivision || null;
+    if (city) {
+      detectedCityName = city;
+      document.getElementById('tz-name').textContent = city;
+      document.title = `TIME.IS — ${city}`;
+      const fsCity = document.getElementById('fs-city');
+      if (fsCity) fsCity.textContent = city;
+      localStorage.setItem('timeis_city_name', city);
+    }
+  } catch {}
+}
+
+async function geolocateCity() {
+  if (!navigator.geolocation) return;
+
+  // ¿Ya tenemos coords guardadas?
+  const cached = localStorage.getItem('timeis_gps');
+  if (cached) {
+    try {
+      const { lat, lon, ts, city } = JSON.parse(cached);
+      userGpsCoords = [lon, lat];
+      // Restaurar ciudad guardada inmediatamente
+      if (city) {
+        detectedCityName = city;
+        document.getElementById('tz-name').textContent = city;
+        document.title = `TIME.IS — ${city}`;
+        const fsCity = document.getElementById('fs-city');
+        if (fsCity) fsCity.textContent = city;
+      }
+      updateMainTemp();
+      // Refrescar solo si pasó más de 24h
+      if (Date.now() - ts < 86400000) return;
+    } catch {}
+  }
+
+  // Pedir permiso (solo primera vez o refresco diario)
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude: lat, longitude: lon } = pos.coords;
+    await applyGpsCoords(lat, lon);
+    // Guardar en localStorage con timestamp y nombre de ciudad
+    localStorage.setItem('timeis_gps', JSON.stringify({
+      lat, lon, ts: Date.now(),
+      city: detectedCityName
+    }));
+  }, () => {}, { timeout: 8000 });
+}
+
+// ── ESTADO CHIPS ─────────────────────────────────────────────
+const DEFAULT_CHIPS = ['America/Los_Angeles','America/New_York','Europe/London','Europe/Paris','Asia/Shanghai','Asia/Tokyo'];
+let activeChips = [];
+
+function loadChips() {
+  const saved = localStorage.getItem('timeis_chips');
+  if (saved) { try { activeChips = JSON.parse(saved); } catch { activeChips = [...DEFAULT_CHIPS]; } }
+  else { activeChips = [...DEFAULT_CHIPS]; }
+
+  // UTC fijo al inicio (el main clock ya muestra la ciudad local)
+  if (!activeChips.includes('UTC')) {
+    activeChips.unshift('UTC');
+  }
+}
+
+function saveChips() { localStorage.setItem('timeis_chips', JSON.stringify(activeChips)); }
+
+// ── HELPERS TIEMPO ───────────────────────────────────────────
+function getLocalTime(tz, withSecs = false) {
+  const opts = { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false };
+  if (withSecs) opts.second = '2-digit';
+  return new Intl.DateTimeFormat('es', opts).format(accurateNow());
+}
+
+function getGMTOffset(tz) {
+  const now = accurateNow();
+  const local = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+  const gmt   = new Date(now.toLocaleString('en-US', { timeZone: 'GMT' }));
+  return (local - gmt) / 3600000;
+}
+
+function fmtOffset(h) {
+  if (h === 0) return '0';
+  const sign = h > 0 ? '+' : '−';
+  const abs = Math.abs(h);
+  if (abs % 1 === 0) return `${sign}${abs} h`;
+  const hrs = Math.floor(abs);
+  const mins = Math.round((abs % 1) * 60);
+  return `${sign}${hrs}h ${mins}m`;
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+// ── RENDERIZAR CHIPS ─────────────────────────────────────────
+function getCityName(tz) {
+  if (tz === 'UTC') return 'UTC';
+  const city = ALL_CITIES.find(c => c.tz === tz);
+  if (city) return city.name;
+  return tz.split('/').pop().replace(/_/g, ' ');
+}
+
+function renderChips() {
+  const row = document.getElementById('cities-row');
+  const addBtn = document.getElementById('add-btn');
+  row.querySelectorAll('.city-chip').forEach(el => el.remove());
+
+  activeChips.forEach(tz => {
+    const chip = document.createElement('div');
+    const isUtc = tz === 'UTC';
+    chip.className = 'city-chip' + (isUtc ? ' detected' : '');
+    chip.dataset.tz = tz;
+    chip.draggable = true;
+    const name = getCityName(tz);
+    chip.innerHTML = `
+      <div class="c-name">${name}</div>
+      <div class="c-time" id="chip-${tz.replace(/\//g,'-')}">--:--</div>
+      <div class="c-temp" id="chip-temp-${tz.replace(/\//g,'-')}"></div>
+      <button class="c-remove" title="Quitar">×</button>`;
+    chip.querySelector('.c-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      activeChips = activeChips.filter(t => t !== tz);
+      saveChips();
+      renderChips();
+    });
+    // Drag events
+    chip.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('chip-tz', tz);
+      setTimeout(() => chip.classList.add('dragging'), 0);
+    });
+    chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
+    chip.addEventListener('dragover', e => { e.preventDefault(); chip.classList.add('drag-over'); });
+    chip.addEventListener('dragleave', () => chip.classList.remove('drag-over'));
+    chip.addEventListener('drop', e => {
+      e.preventDefault();
+      chip.classList.remove('drag-over');
+      const fromTz = e.dataTransfer.getData('chip-tz');
+      if (!fromTz || fromTz === tz) return;
+      const fromIdx = activeChips.indexOf(fromTz);
+      const toIdx   = activeChips.indexOf(tz);
+      activeChips.splice(fromIdx, 1);
+      activeChips.splice(toIdx, 0, fromTz);
+      saveChips();
+      renderChips();
+    });
+    row.insertBefore(chip, addBtn);
+  });
+  setTimeout(updateChipTemps, 100);
+}
+
+// ── SINCRONIZACIÓN DE TIEMPO ─────────────────────────────────
+let timeOffset = 0; // ms de desfase entre reloj local y servidor
+
+async function syncTime() {
+  try {
+    const t0 = Date.now();
+    const r = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+    const d = await r.json();
+    const t1 = Date.now();
+    const serverMs = new Date(d.utc_datetime).getTime();
+    const roundTrip = (t1 - t0) / 2;
+    timeOffset = serverMs + roundTrip - t1;
+  } catch { timeOffset = 0; }
+}
+
+function accurateNow() { return new Date(Date.now() + timeOffset); }
+
+// ── TICK PRINCIPAL ───────────────────────────────────────────
+function tick() {
+  const now = accurateNow();
+  const userTz = USER_TZ;
+
+  // Reloj local del usuario
+  const localOpts = { timeZone: userTz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  const timeStr = new Intl.DateTimeFormat('es', localOpts).format(now);
+  const [hh, mm, ss] = timeStr.split(':');
+  document.getElementById('mc-h0').textContent = hh[0];
+  document.getElementById('mc-h1').textContent = hh[1];
+  document.getElementById('mc-m0').textContent = mm[0];
+  document.getElementById('mc-m1').textContent = mm[1];
+  document.getElementById('mc-s0').textContent = ss[0];
+  document.getElementById('mc-s1').textContent = ss[1];
+
+  // Fecha local del usuario
+  const localDate = new Date(now.toLocaleString('en-US', { timeZone: userTz }));
+  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const week = getWeekNumber(localDate);
+  document.getElementById('date-main').textContent =
+    `${days[localDate.getDay()]}, ${months[localDate.getMonth()]} ${localDate.getDate()}, ${localDate.getFullYear()}, S${week}`;
+
+  const mmdd = String(localDate.getMonth()+1).padStart(2,'0') + '-' + String(localDate.getDate()).padStart(2,'0');
+  document.getElementById('date-event').textContent = HOLIDAYS[mmdd] || '';
+
+  // Chips
+  activeChips.forEach(tz => {
+    const el = document.getElementById('chip-' + tz.replace(/\//g,'-'));
+    if (el) el.textContent = getLocalTime(tz);
+  });
+
+  // Tabla diff
+  document.querySelectorAll('.diff-live').forEach(el => {
+    const tz = el.dataset.tz;
+    if (tz) el.textContent = getLocalTime(tz);
+  });
+}
+
+// ── TABLA DIFERENCIAS ────────────────────────────────────────
+function buildDiffTable() {
+  const table = document.getElementById('diff-table');
+  table.innerHTML = '';
+  DIFF_ROWS.forEach(r => {
+    const off = getGMTOffset(r.tz);
+    const tr = document.createElement('tr');
+    if (r.zero) tr.className = 'zero';
+    tr.innerHTML = `
+      <td>${r.name}</td>
+      <td>${fmtOffset(off)}</td>
+      <td class="diff-live" data-tz="${r.tz}">${getLocalTime(r.tz)}</td>`;
+    table.appendChild(tr);
+  });
+}
+
+// ── MODAL AGREGAR CIUDAD ──────────────────────────────────────
+function buildCityList(filter = '') {
+  const container = document.getElementById('city-list');
+  container.innerHTML = '';
+  const f = filter.toLowerCase().trim();
+  const shown = f ? ALL_CITIES.filter(c => norm(c.name).includes(norm(f)) || norm(c.tz).includes(norm(f))) : ALL_CITIES;
+
+  shown.forEach(c => {
+    if (activeChips.includes(c.tz) && !f) return; // ocultar ya agregadas
+    const div = document.createElement('div');
+    div.className = 'city-option';
+    const off = getGMTOffset(c.tz);
+    const added = activeChips.includes(c.tz);
+    div.innerHTML = `
+      <div>
+        <span class="co-name">${c.name}</span>
+        <span class="co-tz"> · GMT${off >= 0 ? '+' : ''}${off}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="co-time">${getLocalTime(c.tz)}</span>
+        <span class="co-add" style="color:${added ? '#c03' : '#ccc'}">${added ? '✓' : '+'}</span>
+      </div>`;
+    div.addEventListener('click', () => {
+      if (!activeChips.includes(c.tz)) {
+        activeChips.push(c.tz);
+        saveChips();
+        renderChips();
+        buildCityList(filter);
+      }
+    });
+    container.appendChild(div);
+  });
+
+  if (container.innerHTML === '' && f) {
+    container.innerHTML = '<p style="padding:12px;color:#aaa;font-size:0.85rem">No se encontraron ciudades.</p>';
+  }
+}
+
+document.getElementById('add-btn').addEventListener('click', () => {
+  document.getElementById('modal-bg').classList.add('open');
+  document.getElementById('city-search').value = '';
+  buildCityList();
+  document.getElementById('city-search').focus();
+});
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('modal-bg').classList.remove('open');
+});
+document.getElementById('modal-bg').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modal-bg'))
+    document.getElementById('modal-bg').classList.remove('open');
+});
+document.getElementById('city-search').addEventListener('input', (e) => {
+  buildCityList(e.target.value);
+});
+
+// ── COUNTDOWNS ───────────────────────────────────────────────
+let countdowns = [];
+let cdEditId = null;
+
+function loadCountdowns() {
+  try { countdowns = JSON.parse(localStorage.getItem('timeis_cds') || '[]'); } catch { countdowns = []; }
+}
+function saveCountdowns() { localStorage.setItem('timeis_cds', JSON.stringify(countdowns)); }
+
+function cdId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+
+function calcTimeParts(targetMs) {
+  const now = accurateNow();
+  const target = new Date(targetMs);
+  const isPast = target < now;
+  const from = isPast ? target : now;
+  const to   = isPast ? now : target;
+
+  let Y  = to.getFullYear()  - from.getFullYear();
+  let Mo = to.getMonth()     - from.getMonth();
+  let D  = to.getDate()      - from.getDate();
+  let H  = to.getHours()     - from.getHours();
+  let Mi = to.getMinutes()   - from.getMinutes();
+  let S  = to.getSeconds()   - from.getSeconds();
+
+  if (S  < 0) { S  += 60; Mi--; }
+  if (Mi < 0) { Mi += 60; H--;  }
+  if (H  < 0) { H  += 24; D--;  }
+  if (D  < 0) {
+    const daysInPrevMonth = new Date(to.getFullYear(), to.getMonth(), 0).getDate();
+    D  += daysInPrevMonth; Mo--;
+  }
+  if (Mo < 0) { Mo += 12; Y--; }
+
+  const pad = n => String(n).padStart(2, '0');
+  return {
+    isPast,
+    y:  pad(Y),
+    mo: pad(Mo),
+    d:  pad(D),
+    h:  pad(H),
+    m:  pad(Mi),
+    s:  pad(S),
+    totalMs: Math.abs(target - now)
+  };
+}
+
+function renderCountdowns() {
+  const grid = document.getElementById('cd-grid');
+  grid.innerHTML = '';
+  if (countdowns.length === 0) {
+    grid.innerHTML = '<p style="font-size:0.85rem;color:var(--light);padding:4px 0;">No hay cuentas regresivas. Agrega una con el botón.</p>';
+    return;
+  }
+  countdowns.forEach(cd => {
+    const card = document.createElement('div');
+    card.className = 'cd-card';
+    card.dataset.id = cd.id;
+    const targetDate = new Date(cd.target).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const sep = `<span class="cd-sep">:</span>`;
+    card.innerHTML = `
+      <div class="cd-card-top">
+        <div>
+          <div class="cd-card-name">${cd.name}</div>
+          <div class="cd-card-target" id="cd-dir-${cd.id}">—</div>
+          <div class="cd-card-target">${targetDate}</div>
+        </div>
+        <div class="cd-card-actions">
+          <button class="edit" title="Editar">✎</button>
+          <button class="del" title="Eliminar">×</button>
+        </div>
+      </div>
+      <div class="cd-digits">
+        <div class="cd-unit"><span class="cd-num" id="cd-y-${cd.id}">--</span><span class="cd-lbl">años</span></div>
+        ${sep}
+        <div class="cd-unit"><span class="cd-num" id="cd-mo-${cd.id}">--</span><span class="cd-lbl">meses</span></div>
+        ${sep}
+        <div class="cd-unit"><span class="cd-num" id="cd-d-${cd.id}">--</span><span class="cd-lbl">días</span></div>
+        ${sep}
+        <div class="cd-unit"><span class="cd-num" id="cd-h-${cd.id}">--</span><span class="cd-lbl">horas</span></div>
+        ${sep}
+        <div class="cd-unit"><span class="cd-num" id="cd-m-${cd.id}">--</span><span class="cd-lbl">min</span></div>
+        ${sep}
+        <div class="cd-unit"><span class="cd-num" id="cd-s-${cd.id}">--</span><span class="cd-lbl">seg</span></div>
+      </div>
+      <div class="cd-bar-wrap"><div class="cd-bar" id="cd-bar-${cd.id}" style="width:0%"></div></div>
+      <div class="cd-bar-meta">
+        <span class="cd-bar-pct" id="cd-pct-${cd.id}"></span>
+        <span class="cd-bar-pct" id="cd-rem-${cd.id}"></span>
+      </div>`;
+    card.querySelector('.del').addEventListener('click', () => {
+      countdowns = countdowns.filter(c => c.id !== cd.id);
+      saveCountdowns();
+      renderCountdowns();
+    });
+    card.querySelector('.edit').addEventListener('click', () => openCdModal(cd.id));
+
+    // Drag & drop
+    card.draggable = true;
+    card.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('cd-id', cd.id);
+      setTimeout(() => card.classList.add('dragging'), 0);
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      document.querySelectorAll('.cd-card').forEach(c => c.classList.remove('drag-over'));
+    });
+    card.addEventListener('dragover', e => {
+      e.preventDefault();
+      document.querySelectorAll('.cd-card').forEach(c => c.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+    });
+    card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      card.classList.remove('drag-over');
+      const fromId = e.dataTransfer.getData('cd-id');
+      if (!fromId || fromId === cd.id) return;
+      const fromIdx = countdowns.findIndex(c => c.id === fromId);
+      const toIdx   = countdowns.findIndex(c => c.id === cd.id);
+      const [moved] = countdowns.splice(fromIdx, 1);
+      countdowns.splice(toIdx, 0, moved);
+      saveCountdowns();
+      renderCountdowns();
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function tickCountdowns() {
+  const now = Date.now();
+  countdowns.forEach(cd => {
+    const target = new Date(cd.target).getTime();
+    const t = calcTimeParts(target);
+
+    const yEl = document.getElementById('cd-y-' + cd.id);
+    if (!yEl) return;
+    const card = yEl.closest('.cd-card');
+
+    // Actualizar dígitos
+    document.getElementById('cd-y-'  + cd.id).textContent = t.y;
+    document.getElementById('cd-mo-' + cd.id).textContent = t.mo;
+    document.getElementById('cd-d-'  + cd.id).textContent = t.d;
+    document.getElementById('cd-h-'  + cd.id).textContent = t.h;
+    document.getElementById('cd-m-'  + cd.id).textContent = t.m;
+    document.getElementById('cd-s-'  + cd.id).textContent = t.s;
+
+    // Etiqueta de dirección
+    const dirEl = document.getElementById('cd-dir-' + cd.id);
+    if (t.isPast) {
+      card.classList.add('past');
+      card.classList.remove('future');
+      if (dirEl) dirEl.textContent = 'Tiempo transcurrido desde el evento';
+    } else {
+      card.classList.add('future');
+      card.classList.remove('past');
+      if (dirEl) dirEl.textContent = 'Tiempo restante para el evento';
+    }
+
+    // Barra de progreso: desde createdAt (o hoy) hasta target
+    const todayStart = accurateNow(); todayStart.setHours(0,0,0,0);
+    const start = cd.createdAt ? new Date(cd.createdAt).getTime() : todayStart.getTime();
+    const total = target - start;
+    const elapsed = now - start;
+    const pct = total !== 0 ? Math.min(100, Math.max(0, (elapsed / total) * 100)) : (t.isPast ? 100 : 0);
+    document.getElementById('cd-bar-' + cd.id).style.width = pct.toFixed(1) + '%';
+    document.getElementById('cd-pct-' + cd.id).textContent = pct.toFixed(0) + '% transcurrido';
+
+    // Meta derecha
+    const remEl = document.getElementById('cd-rem-' + cd.id);
+    if (t.isPast) {
+      remEl.textContent = `hace ${parseInt(t.y) > 0 ? t.y + 'a ' : ''}${parseInt(t.mo) > 0 ? t.mo + 'm ' : ''}${parseInt(t.d) > 0 ? t.d + 'd' : 'hoy'}`.trim();
+    } else {
+      const daysLeft = Math.ceil(t.totalMs / 86400000);
+      remEl.textContent = daysLeft <= 1 ? 'mañana' : `${daysLeft}d restantes`;
+    }
+  });
+}
+
+function openCdModal(editId = null) {
+  cdEditId = editId;
+  const modal = document.getElementById('cd-modal-bg');
+  modal.classList.add('open');
+  if (editId) {
+    const cd = countdowns.find(c => c.id === editId);
+    document.getElementById('cd-modal-title').textContent = 'Editar cuenta regresiva';
+    document.getElementById('cd-name').value = cd.name;
+    const d = new Date(cd.target);
+    const pad = n => String(n).padStart(2,'0');
+    document.getElementById('cd-datetime').value =
+      `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } else {
+    document.getElementById('cd-modal-title').textContent = 'Nueva cuenta regresiva';
+    document.getElementById('cd-name').value = '';
+    document.getElementById('cd-datetime').value = '';
+  }
+  document.getElementById('cd-name').focus();
+}
+
+function closeCdModal() {
+  document.getElementById('cd-modal-bg').classList.remove('open');
+  cdEditId = null;
+}
+
+document.getElementById('cd-add-btn').addEventListener('click', () => openCdModal());
+document.getElementById('cd-modal-close').addEventListener('click', closeCdModal);
+document.getElementById('cd-cancel').addEventListener('click', closeCdModal);
+document.getElementById('cd-modal-bg').addEventListener('click', e => { if (e.target === document.getElementById('cd-modal-bg')) closeCdModal(); });
+
+document.getElementById('cd-save').addEventListener('click', () => {
+  const name = document.getElementById('cd-name').value.trim();
+  const dt   = document.getElementById('cd-datetime').value;
+  if (!name || !dt) { document.getElementById('cd-name').focus(); return; }
+  if (cdEditId) {
+    const idx = countdowns.findIndex(c => c.id === cdEditId);
+    if (idx > -1) countdowns[idx] = { ...countdowns[idx], name, target: new Date(dt).toISOString() };
+  } else {
+    countdowns.push({ id: cdId(), name, target: new Date(dt).toISOString(), createdAt: accurateNow().toISOString() });
+  }
+  saveCountdowns();
+  renderCountdowns();
+  closeCdModal();
+});
+
+// ── MENÚ DROPDOWN ────────────────────────────────────────────
+const menuBtn = document.getElementById('menu-btn');
+const menuDropdown = document.getElementById('menu-dropdown');
+menuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  menuDropdown.classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('menu-wrap').contains(e.target))
+    menuDropdown.classList.remove('open');
+});
+
+// ── COORDENADAS POR TIMEZONE ────────────────────────────────
+const TZ_COORDS = {
+  'America/Anchorage':[-149.90,61.22],'America/Vancouver':[-123.12,49.28],
+  'America/Los_Angeles':[-118.24,34.05],'America/Phoenix':[-112.07,33.45],
+  'America/Denver':[-104.99,39.74],'America/Chicago':[-87.63,41.88],
+  'America/New_York':[-74.01,40.71],'America/Toronto':[-79.38,43.65],
+  'America/Mexico_City':[-99.13,19.43],'America/Monterrey':[-100.32,25.67],
+  'America/Guatemala':[-90.52,14.64],'America/Costa_Rica':[-84.09,9.93],
+  'America/Panama':[-79.52,8.99],'America/Havana':[-82.38,23.14],
+  'America/Santo_Domingo':[-69.90,18.48],'America/Puerto_Rico':[-66.10,18.47],
+  'America/Caracas':[-66.88,10.48],'America/Bogota':[-74.08,4.71],
+  'America/Guayaquil':[-79.90,-2.17],'America/Lima':[-77.04,-12.04],
+  'America/La_Paz':[-68.13,-16.50],'America/Asuncion':[-57.64,-25.29],
+  'America/Santiago':[-70.67,-33.45],'America/Montevideo':[-56.19,-34.90],
+  'America/Argentina/Buenos_Aires':[-58.38,-34.60],
+  'America/Argentina/Cordoba':[-64.18,-31.42],
+  'America/Sao_Paulo':[-46.63,-23.55],'America/Manaus':[-60.02,-3.10],
+  'America/Fortaleza':[-38.54,-3.72],
+  'Atlantic/Reykjavik':[-21.89,64.13],
+  'Europe/Dublin':[-6.26,53.33],'Europe/London':[-0.13,51.51],
+  'Europe/Lisbon':[-9.14,38.72],'Europe/Madrid':[-3.70,40.42],
+  'Europe/Paris':[2.35,48.85],'Europe/Brussels':[4.35,50.85],
+  'Europe/Amsterdam':[4.90,52.37],'Europe/Berlin':[13.40,52.52],
+  'Europe/Vienna':[16.37,48.21],'Europe/Prague':[14.42,50.08],
+  'Europe/Warsaw':[21.01,52.23],'Europe/Zurich':[8.54,47.37],
+  'Europe/Rome':[12.49,41.90],'Europe/Stockholm':[18.07,59.33],
+  'Europe/Oslo':[10.75,59.91],'Europe/Copenhagen':[12.57,55.68],
+  'Europe/Helsinki':[24.94,60.17],'Europe/Tallinn':[24.75,59.44],
+  'Europe/Riga':[24.11,56.95],'Europe/Vilnius':[25.28,54.69],
+  'Europe/Bucharest':[26.10,44.43],'Europe/Sofia':[23.32,42.70],
+  'Europe/Athens':[23.73,37.98],'Europe/Belgrade':[20.46,44.80],
+  'Europe/Zagreb':[15.98,45.81],'Europe/Budapest':[19.04,47.50],
+  'Europe/Kiev':[30.52,50.45],'Europe/Istanbul':[28.95,41.01],
+  'Europe/Moscow':[37.62,55.75],'Europe/Minsk':[27.56,53.90],
+  'Africa/Casablanca':[-7.59,33.59],'Africa/Tunis':[10.18,36.82],
+  'Africa/Cairo':[31.24,30.06],'Africa/Accra':[-0.19,5.56],
+  'Africa/Dakar':[-17.44,14.69],'Africa/Abidjan':[-4.03,5.35],
+  'Africa/Lagos':[3.39,6.45],'Africa/Kigali':[30.06,-1.94],
+  'Africa/Nairobi':[36.82,-1.29],'Africa/Addis_Ababa':[38.74,9.02],
+  'Africa/Dar_es_Salaam':[39.27,-6.79],'Africa/Lusaka':[28.32,-15.42],
+  'Africa/Harare':[31.05,-17.83],'Africa/Johannesburg':[28.04,-26.20],
+  'Asia/Riyadh':[46.72,24.69],'Asia/Dubai':[55.30,25.20],'Asia/Jerusalem':[35.22,31.77],
+  'Asia/Beirut':[35.50,33.89],'Asia/Amman':[35.93,31.95],
+  'Asia/Baghdad':[44.44,33.34],'Asia/Kuwait':[47.98,29.37],
+  'Asia/Qatar':[51.53,25.29],'Asia/Bahrain':[50.59,26.22],
+  'Asia/Muscat':[58.59,23.61],'Asia/Tehran':[51.42,35.69],
+  'Asia/Baku':[49.87,40.41],'Asia/Tbilisi':[44.83,41.69],
+  'Asia/Yerevan':[44.50,40.18],'Asia/Tashkent':[69.27,41.30],
+  'Asia/Almaty':[76.95,43.25],'Asia/Karachi':[67.01,24.86],
+  'Asia/Kolkata':[77.21,28.66],'Asia/Colombo':[79.86,6.93],
+  'Asia/Dhaka':[90.41,23.81],'Asia/Rangoon':[96.16,16.85],
+  'Asia/Bangkok':[100.52,13.75],'Asia/Ho_Chi_Minh':[106.69,10.82],
+  'Asia/Phnom_Penh':[104.92,11.56],'Asia/Vientiane':[102.60,17.97],
+  'Asia/Jakarta':[106.85,-6.21],'Asia/Makassar':[115.21,-8.67],
+  'Asia/Singapore':[103.82,1.35],'Asia/Kuala_Lumpur':[101.69,3.14],
+  'Asia/Manila':[120.98,14.60],'Asia/Hong_Kong':[114.16,22.28],
+  'Asia/Shanghai':[121.47,31.23],'Asia/Taipei':[121.56,25.04],
+  'Asia/Ulaanbaatar':[106.92,47.89],'Asia/Seoul':[126.98,37.57],
+  'Asia/Tokyo':[139.69,35.69],
+  'Australia/Perth':[115.86,-31.95],'Australia/Darwin':[130.84,-12.46],
+  'Australia/Brisbane':[153.02,-27.47],'Australia/Adelaide':[138.60,-34.93],
+  'Australia/Melbourne':[144.96,-37.81],'Australia/Sydney':[151.21,-33.87],
+  'Pacific/Auckland':[174.76,-36.87],'Pacific/Fiji':[178.44,-18.14],
+  'Pacific/Honolulu':[-157.83,21.31],'Pacific/Tahiti':[-149.57,-17.53],
+  'UTC':[0,51.5],'GMT':[0,51.5],
+};
+
+const fsWeatherCache = {};
+
+async function fetchTemp(tz) {
+  if (fsWeatherCache[tz] && Date.now() - fsWeatherCache[tz].ts < 1800000)
+    return fsWeatherCache[tz].temp;
+
+  // Para la ciudad propia usar GPS real si está disponible
+  const coords = (tz === USER_TZ && userGpsCoords) ? userGpsCoords : TZ_COORDS[tz];
+  if (!coords) return null;
+
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords[1]}&longitude=${coords[0]}&current=temperature_2m&temperature_unit=celsius`);
+    const d = await r.json();
+    const temp = Math.round(d.current?.temperature_2m ?? null);
+    if (temp !== null) fsWeatherCache[tz] = { temp, ts: Date.now() };
+    return temp;
+  } catch { return null; }
+}
+
+function fmtGMT(tz) {
+  const off = getGMTOffset(tz);
+  if (off === 0) return 'UTC +0';
+  return off > 0 ? `UTC +${off}` : `UTC ${off}`;
+}
+
+async function updateFsInfo() {
+  const t1 = await fetchTemp(USER_TZ);
+  const el1 = document.getElementById('fs-info');
+  if (el1) el1.textContent = t1 !== null ? `${t1}°C` : '';
+
+  if (fsCity2Tz) {
+    const t2 = await fetchTemp(fsCity2Tz);
+    const el2 = document.getElementById('fs-info2');
+    if (el2) el2.textContent = t2 !== null ? `${t2}°C` : '';
+  }
+}
+
+// ── TEMPERATURA PANTALLA PRINCIPAL ──────────────────────────
+async function updateMainTemp() {
+  const temp = await fetchTemp(USER_TZ);
+  const el = document.getElementById('main-temp');
+  if (el && temp !== null) el.textContent = `${temp}°C`;
+}
+
+async function updateChipTemps() {
+  await Promise.all(activeChips.map(async tz => {
+    const temp = await fetchTemp(tz);
+    const el = document.getElementById('chip-temp-' + tz.replace(/\//g,'-'));
+    if (el) el.textContent = temp !== null ? `${temp}°C` : '';
+  }));
+}
+
+// ── SEGUNDA CIUDAD FULLSCREEN ─────────────────────────────────
+let fsCity2Tz = localStorage.getItem('timeis_fs_city2') || null;
+
+function setFsCity2(tz, name) {
+  fsCity2Tz = tz;
+  localStorage.setItem('timeis_fs_city2', tz);
+  document.getElementById('fs-city2').textContent = name;
+  document.getElementById('fs-col2').classList.remove('hidden');
+  document.getElementById('fs-divider').classList.remove('hidden');
+  closeFsCity2Modal();
+  updateFsInfo();
+  scaleFsClock();
+}
+
+function removeFsCity2() {
+  fsCity2Tz = null;
+  localStorage.removeItem('timeis_fs_city2');
+  document.getElementById('fs-col2').classList.add('hidden');
+  document.getElementById('fs-divider').classList.add('hidden');
+  closeFsCity2Modal();
+  scaleFsClock();
+}
+
+function openFsCity2Modal() {
+  const modal = document.getElementById('fs-city2-modal');
+  modal.style.display = 'flex';
+  document.getElementById('fs-city2-search').value = '';
+  buildFsCity2List('');
+  document.getElementById('fs-city2-search').focus();
+}
+
+function closeFsCity2Modal() {
+  document.getElementById('fs-city2-modal').style.display = 'none';
+}
+
+function buildFsCity2List(filter) {
+  const container = document.getElementById('fs-city2-list');
+  container.innerHTML = '';
+  const f = filter.toLowerCase().trim();
+  const shown = f ? ALL_CITIES.filter(c => norm(c.name).includes(norm(f)) || norm(c.tz).includes(norm(f))) : ALL_CITIES;
+  shown.forEach(c => {
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:9px 10px;cursor:pointer;font-size:0.88rem;color:#aaa;border-radius:4px;display:flex;justify-content:space-between;align-items:center;';
+    div.innerHTML = `<span style="color:#ccc;font-weight:600">${c.name}</span><span style="font-size:0.78rem;color:#555">${getLocalTime(c.tz)}</span>`;
+    div.addEventListener('mouseover', () => div.style.background='#222');
+    div.addEventListener('mouseout',  () => div.style.background='');
+    div.addEventListener('click', () => setFsCity2(c.tz, c.name));
+    container.appendChild(div);
+  });
+}
+
+document.getElementById('fs-city2-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openFsCity2Modal();
+});
+document.getElementById('fs-city2-modal-close').addEventListener('click', closeFsCity2Modal);
+document.getElementById('fs-city2-remove').addEventListener('click', removeFsCity2);
+document.getElementById('fs-city2-search').addEventListener('input', (e) => buildFsCity2List(e.target.value));
+
+// Restaurar segunda ciudad guardada
+if (fsCity2Tz) {
+  const c2 = ALL_CITIES.find(c => c.tz === fsCity2Tz);
+  if (c2) {
+    document.getElementById('fs-city2').textContent = c2.name;
+    document.getElementById('fs-col2').classList.remove('hidden');
+    document.getElementById('fs-divider').classList.remove('hidden');
+  } else { fsCity2Tz = null; }
+}
+
+// ── WAKE LOCK ────────────────────────────────────────────────
+let wakeLock = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (_) {}
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release().catch(()=>{}); wakeLock = null; }
+}
+
+// Re-adquirir si la pestaña vuelve a ser visible y el FS sigue activo
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && fsOverlay.classList.contains('active'))
+    requestWakeLock();
+});
+
+// ── FULLSCREEN CLOCK ─────────────────────────────────────────
+const fsOverlay = document.getElementById('fs-overlay');
+const fsClockEl = document.getElementById('fs-clock');
+const fsDateEl  = document.getElementById('fs-date');
+const fsCityEl  = document.getElementById('fs-city');
+const fsInner   = document.getElementById('fs-inner');
+
+function scaleFsClock() {
+  if (!fsOverlay.classList.contains('active')) return;
+
+  const vw = screen.width  || window.innerWidth;
+  const vh = screen.height || window.innerHeight;
+  const hasClock2 = !document.getElementById('fs-clock2').classList.contains('hidden');
+  const c2  = document.getElementById('fs-clock2');
+  const div = document.getElementById('fs-divider');
+
+  // Reset
+  fsInner.style.width = 'max-content';
+  const BASE = 100;
+  fsClockEl.style.fontSize = BASE + 'px';
+  if (hasClock2) { c2.style.fontSize = BASE + 'px'; div.style.fontSize = BASE + 'px'; }
+
+  // Medir fila completa a tamaño base
+  const rowW = document.getElementById('fs-row-clocks').getBoundingClientRect().width;
+  if (!rowW) return;
+
+  const byWidth  = Math.floor((vw * 0.88 * BASE) / rowW);
+  const byHeight = Math.floor(vh * 0.48);
+  const finalPx  = Math.min(byWidth, byHeight);
+
+  fsClockEl.style.fontSize = finalPx + 'px';
+  if (hasClock2) { c2.style.fontSize = finalPx + 'px'; div.style.fontSize = finalPx + 'px'; }
+
+  // Fijar ancho del inner = ancho real de la fila escalada
+  const scaledW = Math.ceil(document.getElementById('fs-row-clocks').getBoundingClientRect().width);
+  fsInner.style.width = scaledW + 'px';
+
+  const subPx = Math.max(14, Math.round(finalPx * 0.11));
+  fsDateEl.style.fontSize = subPx + 'px';
+  document.getElementById('fs-subtitle').style.fontSize = subPx + 'px';
+  document.getElementById('fs-info').style.fontSize = subPx + 'px';
+  if (hasClock2) {
+    document.getElementById('fs-subtitle2').style.fontSize = subPx + 'px';
+    document.getElementById('fs-date2').style.fontSize = subPx + 'px';
+    document.getElementById('fs-info2').style.fontSize = subPx + 'px';
+    div.style.fontSize = Math.round(finalPx * 0.5) + 'px';
+  }
+}
+
+function enterFS() {
+  fsOverlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('fs-icon-enter').style.display = 'none';
+  document.getElementById('fs-icon-exit').style.display  = 'block';
+  requestWakeLock();
+  tickFS();
+  updateFsInfo();
+  setInterval(updateFsInfo, 1800000);
+  if (document.documentElement.requestFullscreen)
+    document.documentElement.requestFullscreen().catch(() => scaleFsClock());
+  else
+    scaleFsClock();
+}
+
+function exitFS() {
+  fsOverlay.classList.remove('active');
+  document.body.style.overflow = '';
+  document.getElementById('fs-icon-enter').style.display = 'block';
+  document.getElementById('fs-icon-exit').style.display  = 'none';
+  releaseWakeLock();
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+}
+
+function tickFS() {
+  if (!fsOverlay.classList.contains('active')) return;
+  const now = accurateNow();
+  const tz = USER_TZ;
+  const timeStr = new Intl.DateTimeFormat('es', { timeZone: tz, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false }).format(now);
+  const localDate = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const week = getWeekNumber(localDate);
+  const [hh, mm, ss] = timeStr.split(':');
+  document.getElementById('fc-h0').textContent = hh[0];
+  document.getElementById('fc-h1').textContent = hh[1];
+  document.getElementById('fc-m0').textContent = mm[0];
+  document.getElementById('fc-m1').textContent = mm[1];
+  document.getElementById('fc-s0').textContent = ss[0];
+  document.getElementById('fc-s1').textContent = ss[1];
+  fsDateEl.textContent = `${days[localDate.getDay()]}, ${months[localDate.getMonth()]} ${localDate.getDate()}, ${localDate.getFullYear()} · S${week}`;
+  const detected = detectUserCity();
+  fsCityEl.textContent = detected ? detected.name : tz.split('/').pop().replace(/_/g,' ');
+  document.getElementById('fs-gmt').textContent = fmtGMT(tz);
+
+  // Segundo reloj
+  if (fsCity2Tz) {
+    const t2 = new Intl.DateTimeFormat('es', { timeZone: fsCity2Tz, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false }).format(now);
+    const [h2, m2, s2] = t2.split(':');
+    document.getElementById('fc2-h0').textContent = h2[0];
+    document.getElementById('fc2-h1').textContent = h2[1];
+    document.getElementById('fc2-m0').textContent = m2[0];
+    document.getElementById('fc2-m1').textContent = m2[1];
+    document.getElementById('fc2-s0').textContent = s2[0];
+    document.getElementById('fc2-s1').textContent = s2[1];
+    const localDate2 = new Date(now.toLocaleString('en-US', { timeZone: fsCity2Tz }));
+    const week2 = getWeekNumber(localDate2);
+    document.getElementById('fs-date2').textContent = `${days[localDate2.getDay()]}, ${months[localDate2.getMonth()]} ${localDate2.getDate()}, ${localDate2.getFullYear()} · S${week2}`;
+    document.getElementById('fs-gmt2').textContent = fmtGMT(fsCity2Tz);
+  }
+  setTimeout(tickFS, 1000);
+}
+
+document.getElementById('fs-btn').addEventListener('click', () => {
+  fsOverlay.classList.contains('active') ? exitFS() : enterFS();
+});
+document.getElementById('fs-close').addEventListener('click', exitFS);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') exitFS(); });
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) { exitFS(); return; }
+  scaleFsClock();
+});
+window.addEventListener('resize', () => { if (fsOverlay.classList.contains('active')) scaleFsClock(); });
+
+// ── TEMA OSCURO / CLARO ──────────────────────────────────────
+function applyTheme(dark) {
+  document.body.classList.toggle('dark', dark);
+  document.getElementById('theme-icon-moon').style.display = dark ? 'none' : 'block';
+  document.getElementById('theme-icon-sun').style.display  = dark ? 'block' : 'none';
+}
+const savedTheme = localStorage.getItem('timeis_theme');
+applyTheme(savedTheme === 'dark');
+document.getElementById('theme-btn').addEventListener('click', () => {
+  const isDark = !document.body.classList.contains('dark');
+  applyTheme(isDark);
+  localStorage.setItem('timeis_theme', isDark ? 'dark' : 'light');
+});
+
+// ── INIT ─────────────────────────────────────────────────────
+const USER_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+function initTzLabels() {
+  const detected = detectUserCity();
+  const cityName = detected ? detected.name : USER_TZ.split('/').pop().replace(/_/g,' ');
+  const off = getGMTOffset(USER_TZ);
+  const offStr = off === 0 ? '+0' : (off > 0 ? `+${off}` : `${off}`);
+  const tzId = USER_TZ.split('/').pop().replace(/_/g,' ');
+
+  document.title = `TIME.IS — ${cityName}`;
+  document.getElementById('tz-name').textContent = cityName;
+  const gmtEl = document.getElementById('main-gmt');
+  if (gmtEl) gmtEl.textContent = '/ ' + (offStr === '+0' ? 'UTC +0' : `UTC ${offStr}`);
+  const utcEl = document.getElementById('clock-utc-bg');
+  if (utcEl) utcEl.textContent = `UTC ${offStr}`;
+
+  // Actualizar subtitle links
+  const links = document.querySelector('.date-links');
+  if (links) links.innerHTML = `<span>Usar ${cityName} como tu ubicación predeterminada.</span><span> — </span><span>Agregar a ubicaciones favoritas.</span>`;
+}
+
+loadChips();
+renderChips();
+buildDiffTable();
+initTzLabels();
+geolocateCity();
+loadCountdowns();
+renderCountdowns();
+syncTime();
+setInterval(syncTime, 21600000);
+tick();
+setInterval(() => { tick(); tickCountdowns(); }, 1000);
+tickCountdowns();
+updateMainTemp();
+updateChipTemps();
+setInterval(updateMainTemp, 1800000);
+setInterval(updateChipTemps, 1800000);
+</script>
+
+</body>
+</html>
