@@ -478,9 +478,18 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
 #fs-overlay.night #fs-date2             { color: var(--nr2, #600); }
 #fs-overlay.night #fs-info2             { color: var(--nr2, #600); }
 #fs-overlay.night #fs-divider           { color: var(--nd,  #300); }
-#fs-overlay.night #fs-close,
-#fs-overlay.night #fs-city2-btn         { color: var(--nd,  #300); border-color: var(--nd, #300); }
-#fs-overlay.night #fs-night-btn         { color: var(--nr,  #c00); border-color: var(--nr, #c00); }
+#fs-overlay.night #fs-close             { color: #c00 !important; border-color: #c00 !important; }
+#fs-overlay.night #fs-city2-btn         { color: #c00 !important; border-color: #c00 !important; }
+#fs-overlay.night #fs-night-btn         { color: #c00 !important; border-color: #c00 !important; }
+#fs-overlay.night #fs-gmt2              { color: var(--nr2, #600); }
+#fs-overlay.night .fs-dim               { color: var(--nr, #c00); }
+#fs-night-range { background: transparent; }
+#fs-overlay.night #fs-night-range::-webkit-slider-runnable-track { background: var(--nd, #300); border-radius: 99px; height: 4px; }
+#fs-overlay.night #fs-night-range::-moz-range-track { background: var(--nd, #300); border-radius: 99px; height: 4px; }
+#fs-overlay.night #fs-night-range::-webkit-slider-thumb { background: var(--nr, #c00); }
+#fs-overlay.night #fs-night-range::-moz-range-thumb { background: var(--nr, #c00); border: none; }
+#fs-city2-btn {
+  position: fixed; top: 20px; left: 24px;
   background: none; border: 1px solid #333; border-radius: 50%;
   width: 32px; height: 32px; cursor: pointer;
   color: #555; font-size: 1.1rem; line-height: 1;
@@ -588,7 +597,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
       </div>
       <span id="fs-divider" class="hidden">/</span>
       <div class="fs-col hidden" id="fs-col2">
-        <p id="fs-subtitle2">Zona horaria <strong id="fs-city2">—</strong> / <span id="fs-gmt2" style="color:#3a3a3a;font-weight:400"></span></p>
+        <p id="fs-subtitle2">Zona horaria <strong id="fs-city2">—</strong> / <span id="fs-gmt2" class="fs-dim"></span></p>
         <span id="fs-clock2"><span class="fc-pair"><span class="d" id="fc2-h0">0</span><span class="d" id="fc2-h1">0</span></span><span class="sep">:</span><span class="fc-pair"><span class="d" id="fc2-m0">0</span><span class="d" id="fc2-m1">0</span></span><span class="sep">:</span><span class="fc-pair"><span class="d" id="fc2-s0">0</span><span class="d" id="fc2-s1">0</span></span></span>
         <p id="fs-date2">—</p>
         <p id="fs-info2">—</p>
@@ -600,7 +609,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 36px 28px 0; display: flex; f
   </button>
   <div id="fs-night-slider" style="display:none;position:fixed;top:14px;left:104px;display:none;align-items:center;gap:8px;">
     <span style="font-size:10px;color:#500;">-</span>
-    <input type="range" id="fs-night-range" min="20" max="100" value="75" step="5"
+    <input type="range" id="fs-night-range" min="20" max="100" value="100" step="5"
       style="width:80px;accent-color:#c00;cursor:pointer;">
     <span style="font-size:10px;color:#500;">+</span>
   </div>
@@ -1543,12 +1552,12 @@ const fsNightRange  = document.getElementById('fs-night-range');
 
 function applyNightIntensity(val) {
   const v = parseInt(val);
-  // Escalar: val 20-100 → intensidad del rojo
-  const r = Math.round(v * 2.0);        // 40–200
-  const dim = Math.round(v * 0.45);     // 9–45  (textos secundarios)
+  const r = Math.round(v * 2.0);
+  const dim = Math.round(v * 0.45);
   fsOverlay.style.setProperty('--nr',  `rgb(${r},0,0)`);
   fsOverlay.style.setProperty('--nr2', `rgb(${Math.round(r*0.5)},0,0)`);
   fsOverlay.style.setProperty('--nd',  `rgb(${dim},0,0)`);
+  fsNightRange.style.accentColor = `rgb(${r},0,0)`;
 }
 
 document.getElementById('fs-night-btn').addEventListener('click', (e) => {
